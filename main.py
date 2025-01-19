@@ -84,31 +84,36 @@ def calculate_cost(usage):
         print(f'No data how to calculate cost for model: {get_claude_model()}')
         return
 
-try:
-  client = anthropic.Anthropic(
-      api_key = get_anthropic_api_key(),
-  )
-  message = client.messages.create(
-      model = get_claude_model(),
-      max_tokens = 1024,
-      messages = [
-          {"role": "user", "content": get_user_input()}
-      ]
-  )
-except anthropic.APIConnectionError as e:
-    print("The server could not be reached")
-    print(e.__cause__)  # an underlying Exception, likely raised within httpx.
-except anthropic.RateLimitError as e:
-    print("A 429 status code was received; we should back off a bit.")
-except anthropic.APIStatusError as e:
-    print("Another non-200-range status code was received")
-    print(e.status_code)
-    print(e.response)
 
-print(f' *** MODEL: {get_claude_model()} ***')
-border = "-" * 80
-print(border)
-print(message.content[0].text)
-print(border)
-calculate_cost(message.usage)
-print(border)
+def sent_to_claude():
+    try:
+        client = anthropic.Anthropic(
+            api_key = get_anthropic_api_key(),
+        )
+        message = client.messages.create(
+            model = get_claude_model(),
+            max_tokens = 1024,
+            messages = [
+                {"role": "user", "content": get_user_input()}
+            ]
+        )
+    except anthropic.APIConnectionError as e:
+        print("The server could not be reached")
+        print(e.__cause__)  # an underlying Exception, likely raised within httpx.
+    except anthropic.RateLimitError as e:
+        print("A 429 status code was received; we should back off a bit.")
+    except anthropic.APIStatusError as e:
+        print("Another non-200-range status code was received")
+        print(e.status_code)
+        print(e.response)
+
+    print(f' *** MODEL: {get_claude_model()} ***')
+    border = "-" * 80
+    print(border)
+    print(message.content[0].text)
+    print(border)
+    calculate_cost(message.usage)
+    print(border)
+
+if __name__ == "__main__":
+    sent_to_claude()
