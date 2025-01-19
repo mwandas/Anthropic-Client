@@ -1,12 +1,14 @@
 import anthropic
 import sys
 
+
 ANTHROPIC_KEY_FILE = 'main-key'
 HAIKU3="claude-3-haiku-20240307"
 HAIKU35="claude-3-5-haiku-20241022"
 SONNET35NEW="claude-3-5-sonnet-20241022"
 
 CLAUDE_MODEL=HAIKU35
+
 
 def get_anthropic_api_key():
   try:
@@ -17,22 +19,14 @@ def get_anthropic_api_key():
     print("Warning: 'api-key' file not found.")
     return ""
 
+
 def get_claude_model():
   return CLAUDE_MODEL
-
-
-def get_user_input():
-  if len(sys.argv) > 1:
-    return sys.argv[1]
-  else:
-    return ""
 
 
 def calculate_cost(usage):
     input_tokens = usage.cache_creation_input_tokens + usage.cache_read_input_tokens + usage.input_tokens
     output_tokens = usage.output_tokens
-    print(f'* Input tokens: {input_tokens} ({usage.input_tokens}, {usage.cache_creation_input_tokens}, {usage.cache_read_input_tokens})')
-    print(f'* Output tokens: {output_tokens}')
     model_prices = {
       SONNET35NEW: {
           "input_tokens": 3,
@@ -70,9 +64,9 @@ def calculate_cost(usage):
         formatted_prompt_caching_read_tokens_cost = f"{cost_prompt_caching_read_tokens * 100:.4f}"
 
         cost_summary = [
-            (f"Input tokens: {usage.input_tokens} ({usage.input_tokens}, {usage.cache_creation_input_tokens}, {usage.cache_read_input_tokens})"),
-            (f"Output tokens: {usage.output_tokens}"),
-            (f"Cost: {formatted_cost} ¢"),
+            (f"* Input tokens: {usage.input_tokens} ({usage.input_tokens}, {usage.cache_creation_input_tokens}, {usage.cache_read_input_tokens})"),
+            (f"* Output tokens: {usage.output_tokens}"),
+            (f"\nCost: {formatted_cost} ¢"),
             (f"  - Input tokens: {formatted_input_tokens_cost} ¢"),
             (f"  - Output tokens: {formatted_output_tokens_cost} ¢"),
             (f"  - Prompt caching write tokens: {formatted_prompt_caching_write_tokens_cost} ¢"),
@@ -85,7 +79,7 @@ def calculate_cost(usage):
         return
 
 
-def sent_to_claude():
+def sent_to_claude(input_messages):
     try:
         client = anthropic.Anthropic(
             api_key = get_anthropic_api_key(),
@@ -93,27 +87,47 @@ def sent_to_claude():
         message = client.messages.create(
             model = get_claude_model(),
             max_tokens = 1024,
-            messages = [
-                {"role": "user", "content": get_user_input()}
-            ]
+            messages = input_messages
         )
     except anthropic.APIConnectionError as e:
-        print("The server could not be reached")
+        print('The server could not be reached')
         print(e.__cause__)  # an underlying Exception, likely raised within httpx.
     except anthropic.RateLimitError as e:
-        print("A 429 status code was received; we should back off a bit.")
+        print('A 429 status code was received; we should back off a bit.')
     except anthropic.APIStatusError as e:
-        print("Another non-200-range status code was received")
+        print('Another non-200-range status code was received')
         print(e.status_code)
         print(e.response)
 
-    print(f' *** MODEL: {get_claude_model()} ***')
-    border = "-" * 80
-    print(border)
-    print(message.content[0].text)
-    print(border)
-    calculate_cost(message.usage)
-    print(border)
+    return message
 
-if __name__ == "__main__":
-    sent_to_claude()
+
+def create_message_as_assistant(conversation, current_message, role):
+    conversation.append({'role': role, 'content': current_message})
+    return conversation
+
+
+def chat_function():
+    conversation = []
+    while True:
+        user_message = input("Enter your message (or 'exit' to quit): ")
+
+        if user_message.lower() == 'exit':
+            print('Exiting chat...')
+            break
+
+        print('\nYou: ', user_message)
+
+        conversation = create_message_as_assistant(conversation, user_message, role = 'user')
+        claude_message = sent_to_claude(conversation)
+        claude_response = claude_message.content[0].text
+        conversation = create_message_as_assistant(conversation, claude_response, role = 'assistant')
+        print(f'{CLAUDE_MODEL}: ', claude_response)
+        border = '-' * 80
+        print(border)
+        calculate_cost(claude_message.usage)
+        print(border)
+        print()
+
+if __name__ == '__main__':
+    chat_function()
