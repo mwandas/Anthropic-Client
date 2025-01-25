@@ -1,10 +1,8 @@
 import anthropic
-import sys
+import argparse
 
 
 ANTHROPIC_KEY_FILE = 'main-key'
-
-CLAUDE_MODEL = 'haiku3.5'
 
 MODEL_CONFIG = {
     'haiku3': {
@@ -50,16 +48,12 @@ def get_anthropic_api_key():
     return ""
 
 
-def get_claude_model():
-  return CLAUDE_MODEL
-
-
-def calculate_cost(usage):
-    if not MODEL_CONFIG[get_claude_model()].get('pricing'):
-        print(f'No pricing data available for model: {MODEL_CONFIG[get_claude_model()]["id"]}')
+def calculate_cost(model, usage):
+    if not model.get('pricing'):
+        print(f'No pricing data available for model: {model["id"]}')
         return
 
-    pricing = MODEL_CONFIG[get_claude_model()]['pricing']
+    pricing = model['pricing']
 
     cost_input_tokens = usage.input_tokens * pricing['input tokens'] / 1e6
     cost_output_tokens = usage.output_tokens * pricing['output tokens'] / 1e6
@@ -87,13 +81,13 @@ def calculate_cost(usage):
         print(line)
 
 
-def sent_to_claude(input_messages):
+def sent_to_claude(model, input_messages):
     try:
         client = anthropic.Anthropic(
             api_key = get_anthropic_api_key(),
         )
         message = client.messages.create(
-            model = MODEL_CONFIG[get_claude_model()]['id'],
+            model = model['id'],
             max_tokens = 1024,
             messages = input_messages
         )
@@ -115,7 +109,7 @@ def create_message_as_assistant(conversation, current_message, role):
     return conversation
 
 
-def chat_function():
+def chat_loop(model):
     conversation = []
     while True:
         user_message = input("Enter your message (or 'exit' to quit): ")
@@ -127,15 +121,31 @@ def chat_function():
         print('\nYou: ', user_message)
 
         conversation = create_message_as_assistant(conversation, user_message, role = 'user')
-        claude_message = sent_to_claude(conversation)
+        claude_message = sent_to_claude(model, conversation)
         claude_response = claude_message.content[0].text
         conversation = create_message_as_assistant(conversation, claude_response, role = 'assistant')
-        print(f'{MODEL_CONFIG[get_claude_model()]["name"]}:', claude_response)
+        print(f'{model["name"]}:', claude_response)
         border = '-' * 80
         print(border)
-        calculate_cost(claude_message.usage)
+        calculate_cost(model, claude_message.usage)
         print(border)
         print()
 
+
 if __name__ == '__main__':
-    chat_function()
+    parser = argparse.ArgumentParser(description = 'Chat with Claude.',
+                                     formatter_class = argparse.RawTextHelpFormatter)
+
+    parser.add_argument(
+        '--model',
+        choices=MODEL_CONFIG.keys(),
+        default="haiku3.5",
+        help=f'The model to use.\n  Options:\n' + '\n'.join(
+            [f'   - {key}: {value["name"]}'
+            for key, value in MODEL_CONFIG.items()]
+        ) + '\nDefaults to haiku3.5.',
+    )
+
+    args = parser.parse_args()
+
+    chat_loop(MODEL_CONFIG[args.model])

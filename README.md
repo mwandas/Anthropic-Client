@@ -19,6 +19,25 @@ This script operates in chat mode. It prompts the user for input, displays the r
 
 To exit the application, type 'exit' as user input.
 
+### The 'help' parameter output
+```
+> python3 main.py -h
+usage: main.py [-h] [--model {haiku3,haiku3.5,sonnet3.5}]
+
+Chat with Claude.
+
+options:
+  -h, --help            show this help message and exit
+  --model {haiku3,haiku3.5,sonnet3.5}
+                        The model to use.
+                          Options:
+                           - haiku3: Haiku 3
+                           - haiku3.5: Haiku 3.5
+                           - sonnet3.5: Sonnet 3.5 (New)
+                        Defaults to haiku3.5.
+
+```
+
 ### Example Output
 
 ```
