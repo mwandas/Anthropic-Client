@@ -81,14 +81,29 @@ def calculate_cost(model, usage):
         print(line)
 
 
-def sent_to_claude(model, input_messages):
+def sent_to_claude(model, input_messages, cache_file):
     try:
         client = anthropic.Anthropic(
             api_key = get_anthropic_api_key(),
         )
+
+        system_messages = []
+        if cache_file:
+            try:
+                with open(cache_file, 'r', encoding='utf-8') as f:
+                    cache_content = f.read()
+                    system_messages.append({
+                        'type': 'text',
+                        'text': cache_content,
+                        'cache_control': {'type': 'ephemeral'}
+                    })
+            except FileNotFoundError:
+                print(f"Warning: Cache file '{cache_file}' not found.")
+
         message = client.messages.create(
             model = model['id'],
             max_tokens = 1024,
+            system = system_messages,
             messages = input_messages
         )
     except anthropic.APIConnectionError as e:
@@ -109,7 +124,7 @@ def create_message_as_assistant(conversation, current_message, role):
     return conversation
 
 
-def chat_loop(model):
+def chat_loop(model, cache_file):
     conversation = []
     while True:
         user_message = input("Enter your message (or 'exit' to quit): ")
@@ -121,7 +136,7 @@ def chat_loop(model):
         print('\nYou: ', user_message)
 
         conversation = create_message_as_assistant(conversation, user_message, role = 'user')
-        claude_message = sent_to_claude(model, conversation)
+        claude_message = sent_to_claude(model, conversation, cache_file)
         claude_response = claude_message.content[0].text
         conversation = create_message_as_assistant(conversation, claude_response, role = 'assistant')
         print(f'{model["name"]}:', claude_response)
@@ -146,6 +161,12 @@ if __name__ == '__main__':
         ) + '\nDefaults to haiku3.5.',
     )
 
+    parser.add_argument(
+        '--cache',
+        dest = 'cache_file',
+        help = 'Path to the cache text file.',
+    )
+
     args = parser.parse_args()
 
-    chat_loop(MODEL_CONFIG[args.model])
+    chat_loop(MODEL_CONFIG[args.model], args.cache_file)

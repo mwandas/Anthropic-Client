@@ -22,7 +22,7 @@ To exit the application, type 'exit' as user input.
 ### The 'help' parameter output
 ```
 > python3 main.py -h
-usage: main.py [-h] [--model {haiku3,haiku3.5,sonnet3.5}]
+usage: main.py [-h] [--model {haiku3,haiku3.5,sonnet3.5}] [--cache CACHE_FILE]
 
 Chat with Claude.
 
@@ -35,7 +35,7 @@ options:
                            - haiku3.5: Haiku 3.5
                            - sonnet3.5: Sonnet 3.5 (New)
                         Defaults to haiku3.5.
-
+  --cache CACHE_FILE    Path to the cache text file.
 ```
 
 ### Example Output
