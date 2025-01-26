@@ -50,10 +50,10 @@ def calculate_cost(usage):
 
     current_model = get_claude_model()
     if current_model in model_prices:
-        cost_input_tokens = usage.input_tokens * model_prices[current_model]['input_tokens'] / 10e6
-        cost_output_tokens = usage.output_tokens * model_prices[current_model]['output_tokens'] / 10e6
-        cost_prompt_caching_write_tokens = usage.cache_creation_input_tokens * model_prices[current_model]['prompt_caching_write_tokens'] / 10e6
-        cost_prompt_caching_read_tokens = usage.cache_read_input_tokens * model_prices[current_model]['prompt_caching_read_tokens'] / 10e6
+        cost_input_tokens = usage.input_tokens * model_prices[current_model]['input_tokens'] / 1e6
+        cost_output_tokens = usage.output_tokens * model_prices[current_model]['output_tokens'] / 1e6
+        cost_prompt_caching_write_tokens = usage.cache_creation_input_tokens * model_prices[current_model]['prompt_caching_write_tokens'] / 1e6
+        cost_prompt_caching_read_tokens = usage.cache_read_input_tokens * model_prices[current_model]['prompt_caching_read_tokens'] / 1e6
 
         cost = cost_input_tokens + cost_output_tokens + cost_prompt_caching_write_tokens + cost_prompt_caching_read_tokens
 
