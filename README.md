@@ -25,7 +25,7 @@ To exit the application, type 'exit' as user input.
 Enter your message (or 'exit' to quit): How many 'r' are in strawberry?
 
 You:  How many 'r' are in strawberry?
-claude-3-5-haiku-20241022:  There are 2 'r' letters in the word "strawberry".
+Haiku 3.5: There are 2 'r' letters in the word "strawberry".
 --------------------------------------------------------------------------------
 * Input tokens: 18 (18, 0, 0)
 * Output tokens: 19
@@ -40,7 +40,7 @@ Cost: 0.0090 ¢
 Enter your message (or 'exit' to quit): It is incorrecct.
 
 You:  It is incorrecct.
-claude-3-5-haiku-20241022:  I apologize, but my previous answer was correct. Let me explain:
+Haiku 3.5: I apologize, but my previous answer was correct. Let me explain:
 
 The word "strawberry" has 2 'r' letters:
 - One 'r' in "straw"
@@ -63,7 +63,7 @@ Cost: 0.0393 ¢
 Enter your message (or 'exit' to quit): Still incorrect
 
 You:  Still incorrect
-claude-3-5-haiku-20241022:  Let me count the 'r' letters carefully:
+Haiku 3.5: Let me count the 'r' letters carefully:
 
 st(r)awbe(r)(r)y
 
