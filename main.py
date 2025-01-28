@@ -1,5 +1,6 @@
 import anthropic
 import argparse
+import copy
 
 
 ANTHROPIC_KEY_FILE = 'main-key'
@@ -68,17 +69,23 @@ def calculate_cost(model, usage):
     formatted_prompt_caching_write_tokens_cost = f"{cost_prompt_caching_write_tokens * 100:.4f}"
     formatted_prompt_caching_read_tokens_cost = f"{cost_prompt_caching_read_tokens * 100:.4f}"
 
-    cost_summary = [
-        (f"* Input tokens: {usage.input_tokens} ({usage.input_tokens}, {usage.cache_creation_input_tokens}, {usage.cache_read_input_tokens})"),
-        (f"* Output tokens: {usage.output_tokens}"),
-        (f"\nCost: {formatted_cost} ¢"),
-        (f"  - Input tokens: {formatted_input_tokens_cost} ¢"),
-        (f"  - Output tokens: {formatted_output_tokens_cost} ¢"),
-        (f"  - Prompt caching write tokens: {formatted_prompt_caching_write_tokens_cost} ¢"),
-        (f"  - Prompt caching read tokens: {formatted_prompt_caching_read_tokens_cost} ¢"),
-    ]
-    for line in cost_summary:
-        print(line)
+    cost_summary = {
+        "total": cost,
+        "input": cost_input_tokens,
+        "output": cost_output_tokens,
+        "write": cost_prompt_caching_write_tokens,
+        "read": cost_prompt_caching_read_tokens,
+        "formatted_total": formatted_cost,
+        "formatted_input": formatted_input_tokens_cost,
+        "formatted_output": formatted_output_tokens_cost,
+        "formatted_write": formatted_prompt_caching_write_tokens_cost,
+        "formatted_read": formatted_prompt_caching_read_tokens_cost,
+        "input_tokens": usage.input_tokens,
+        "cache_creation_input_tokens": usage.cache_creation_input_tokens,
+        "cache_read_input_tokens": usage.cache_read_input_tokens,
+        "output_tokens": usage.output_tokens
+        }
+    return cost_summary
 
 
 def sent_to_claude(model, input_messages, cache_file):
@@ -126,6 +133,13 @@ def create_message_as_assistant(conversation, current_message, role):
 
 def chat_loop(model, cache_file):
     conversation = []
+    total_cost = {
+        "total": 0,
+        "input": 0,
+        "output": 0,
+        "write": 0,
+        "read": 0
+    }
     while True:
         user_message = input("Enter your message (or 'exit' to quit): ")
 
@@ -136,13 +150,35 @@ def chat_loop(model, cache_file):
         print('\nYou: ', user_message)
 
         conversation = create_message_as_assistant(conversation, user_message, role = 'user')
-        claude_message = sent_to_claude(model, conversation, cache_file)
+        claude_message = sent_to_claude(model, copy.deepcopy(conversation), cache_file)
         claude_response = claude_message.content[0].text
         conversation = create_message_as_assistant(conversation, claude_response, role = 'assistant')
         print(f'{model["name"]}:', claude_response)
         border = '-' * 80
         print(border)
-        calculate_cost(model, claude_message.usage)
+        cost_summary = calculate_cost(model, claude_message.usage)
+        if cost_summary:
+            total_cost["total"] += cost_summary["total"]
+            total_cost["input"] += cost_summary["input"]
+            total_cost["output"] += cost_summary["output"]
+            total_cost["write"] += cost_summary["write"]
+            total_cost["read"] += cost_summary["read"]
+
+            print(f"* Input tokens: {cost_summary['input_tokens']} ({cost_summary['input_tokens']}, {cost_summary['cache_creation_input_tokens']}, {cost_summary['cache_read_input_tokens']})")
+            print(f"* Output tokens: {cost_summary['output_tokens']}")
+            print(f"\nCost: {cost_summary['formatted_total']} ¢")
+            print(f"  - Input tokens: {cost_summary['formatted_input']} ¢")
+            print(f"  - Output tokens: {cost_summary['formatted_output']} ¢")
+            print(f"  - Prompt caching write tokens: {cost_summary['formatted_write']} ¢")
+            print(f"  - Prompt caching read tokens: {cost_summary['formatted_read']} ¢")
+
+
+            print(f"\nTotal cost so far: {total_cost['total'] * 100:.4f} ¢")
+            print(f"  - Input tokens: {total_cost['input'] * 100:.4f} ¢")
+            print(f"  - Output tokens: {total_cost['output'] * 100:.4f} ¢")
+            print(f"  - Prompt caching write tokens: {total_cost['write'] * 100:.4f} ¢")
+            print(f"  - Prompt caching read tokens: {total_cost['read'] * 100:.4f} ¢")
+
         print(border)
         print()
 
