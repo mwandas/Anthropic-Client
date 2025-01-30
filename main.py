@@ -107,6 +107,7 @@ def sent_to_claude(model, input_messages, cache_file):
             except FileNotFoundError:
                 print(f"Warning: Cache file '{cache_file}' not found.")
 
+        input_messages[-1]['content'][0]['cache_control'] = {'type': 'ephemeral'}
         message = client.messages.create(
             model = model['id'],
             max_tokens = 1024,
@@ -127,7 +128,11 @@ def sent_to_claude(model, input_messages, cache_file):
 
 
 def create_message_as_assistant(conversation, current_message, role):
-    conversation.append({'role': role, 'content': current_message})
+    conversation.append({'role': role,
+                         'content': [{ 'type': 'text',
+                                       'text': current_message,
+                                     }]
+                        })
     return conversation
 
 
