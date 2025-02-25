@@ -1,6 +1,7 @@
 import anthropic
 import argparse
 import copy
+import time
 
 
 ANTHROPIC_KEY_FILE = 'main-key'
@@ -124,15 +125,22 @@ def sent_to_claude(model, input_messages, cache_file):
             system = system_messages,
             messages = input_messages
         )
-    except anthropic.APIConnectionError as e:
-        print('The server could not be reached')
-        print(e.__cause__)  # an underlying Exception, likely raised within httpx.
-    except anthropic.RateLimitError as e:
-        print('A 429 status code was received; we should back off a bit.')
-    except anthropic.APIStatusError as e:
+    except anthropic.RateLimitError as e: # 429 Error
+        print('Your account has hit a rate limit.')
+        print(e)
+        time.sleep(5)
+        return sent_to_claude(model, input_messages, cache_file)
+    except anthropic.InternalServerError as e:
+        print('Internal server error. Please try again later.')
+        print(e)
+        return sent_to_claude(model, input_messages, cache_file)
+    except anthropic.APIStatusError as e:  # Catch-all for other error when an API response has a status code of 4xx or 5xx.
         print('Another non-200-range status code was received')
-        print(e.status_code)
-        print(e.response)
+        print(f'Status Code: {e.status_code}')
+        print(f'Response: {e.response}')
+        print(e)
+        time.sleep(5)
+        return sent_to_claude(model, input_messages, cache_file)
 
     return message
 
