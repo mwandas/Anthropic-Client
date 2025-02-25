@@ -35,6 +35,16 @@ MODEL_CONFIG = {
             'prompt caching write tokens': 3.75,
             'prompt caching read tokens': 0.3,
         }
+    },
+    'sonnet3.7': {
+        'id': 'claude-3-7-sonnet-20250219',
+        'name': 'Sonnet 3.7',
+        'pricing': {
+            'input tokens': 3,
+            'output tokens': 15,
+            'prompt caching write tokens': 3.75,
+            'prompt caching read tokens': 0.3,
+        }
     }
 }
 
